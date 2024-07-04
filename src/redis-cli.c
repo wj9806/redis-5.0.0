@@ -748,6 +748,7 @@ static int cliSelect(void) {
  *      CC_FORCE: The connection is performed even if there is already
  *                a connected socket.
  *      CC_QUIET: Don't print errors if connection fails. */
+//和服务端建立链接
 static int cliConnect(int flags) {
     if (context == NULL || flags & CC_FORCE) {
         if (context != NULL) {
@@ -1052,6 +1053,7 @@ static int cliReadReply(int output_raw_strings) {
         cliRefreshPrompt();
     }
 
+    //输出响应
     if (output) {
         if (output_raw_strings) {
             out = cliFormatReplyRaw(reply);
@@ -1140,6 +1142,7 @@ static int cliSendCommand(int argc, char **argv, long repeat) {
         argvlen[j] = sdslen(argv[j]);
 
     while(repeat-- > 0) {
+        //命令转RESP协议格式
         redisAppendCommandArgv(context,argc,(const char**)argv,argvlen);
         while (config.monitor_mode) {
             if (cliReadReply(output_raw) != REDIS_OK) exit(1);
@@ -1639,11 +1642,13 @@ static void repl(void) {
 
     /* Initialize the help and, if possible, use the COMMAND command in order
      * to retrieve missing entries. */
+    //初始化帮助
     cliInitHelp();
     cliIntegrateHelp();
 
     config.interactive = 1;
     linenoiseSetMultiLine(1);
+    //设置回调
     linenoiseSetCompletionCallback(completionCallback);
     linenoiseSetHintsCallback(hintsCallback);
     linenoiseSetFreeHintsCallback(freeHintsCallback);
@@ -1659,13 +1664,16 @@ static void repl(void) {
         cliLoadPreferences();
     }
 
+    //刷新输入框
     cliRefreshPrompt();
+    //利用linenoise获得输入信息
     while((line = linenoise(context ? config.prompt : "not connected> ")) != NULL) {
         if (line[0] != '\0') {
             long repeat = 1;
             int skipargs = 0;
             char *endptr = NULL;
 
+            //输入信息分割成字符串数组
             argv = cliSplitArgs(line,&argc);
 
             /* check if we have a repeat command option and
@@ -1723,6 +1731,7 @@ static void repl(void) {
                 } else if (argc == 1 && !strcasecmp(argv[0],"clear")) {
                     linenoiseClearScreen();
                 } else {
+                    //进行命令发送
                     long long start_time = mstime(), elapsed;
 
                     issueCommandRepeat(argc-skipargs, argv+skipargs, repeat);
@@ -6653,6 +6662,7 @@ int main(int argc, char **argv) {
         config.output = OUTPUT_STANDARD;
     config.mb_delim = sdsnew("\n");
 
+    //解析命令行参数配置
     firstarg = parseOptions(argc,argv);
     argc -= firstarg;
     argv += firstarg;
@@ -6740,6 +6750,7 @@ int main(int argc, char **argv) {
         /* Note that in repl mode we don't abort on connection error.
          * A new attempt will be performed for every command send. */
         cliConnect(0);
+        //默认模式
         repl();
     }
 

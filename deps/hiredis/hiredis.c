@@ -473,6 +473,8 @@ int redisFormatCommand(char **target, const char *format, ...) {
  * number of arguments, an array with arguments and an array with their
  * lengths. If the latter is set to NULL, strlen will be used to compute the
  * argument lengths.
+ *
+ * 将命令转成RESP协议
  */
 int redisFormatSdsCommandArgv(sds *target, int argc, const char **argv,
                               const size_t *argvlen)
@@ -879,12 +881,14 @@ int redisGetReply(redisContext *c, void **reply) {
     if (aux == NULL && c->flags & REDIS_BLOCK) {
         /* Write until done */
         do {
+            //将命令发送到服务器端
             if (redisBufferWrite(c,&wdone) == REDIS_ERR)
                 return REDIS_ERR;
         } while (!wdone);
 
         /* Read until there is a reply */
         do {
+            //从服务器端接收结果
             if (redisBufferRead(c) == REDIS_ERR)
                 return REDIS_ERR;
             if (redisGetReplyFromReader(c,&aux) == REDIS_ERR)

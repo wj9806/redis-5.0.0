@@ -293,6 +293,7 @@ void _addReplyStringToList(client *c, const char *s, size_t len) {
  * The following functions are the ones that commands implementations will call.
  * -------------------------------------------------------------------------- */
 
+//写缓冲区
 /* Add the object 'obj' string representation to the client output buffer. */
 void addReply(client *c, robj *obj) {
     if (prepareClientToWrite(c) != C_OK) return;
@@ -1301,6 +1302,7 @@ int processMultibulkBuffer(client *c) {
 
         if (ll <= 0) return C_OK;
 
+        //multibulklen 参数个数
         c->multibulklen = ll;
 
         /* Setup argv array on client structure */
@@ -1309,6 +1311,7 @@ int processMultibulkBuffer(client *c) {
     }
 
     serverAssertWithInfo(c,NULL,c->multibulklen > 0);
+    //根据参数个数拆解个数
     while(c->multibulklen) {
         /* Read bulk length if unknown */
         if (c->bulklen == -1) {
@@ -1403,6 +1406,7 @@ int processMultibulkBuffer(client *c) {
  * more query buffer to process, because we read more data from the socket
  * or because a client was blocked and later reactivated, so there could be
  * pending query buffer, already representing a full command, to process. */
+//服务器端解析请求
 void processInputBuffer(client *c) {
     server.current_client = c;
 
@@ -1437,8 +1441,10 @@ void processInputBuffer(client *c) {
         }
 
         if (c->reqtype == PROTO_REQ_INLINE) {
+            //如果是内联模式请求（telnet）
             if (processInlineBuffer(c) != C_OK) break;
         } else if (c->reqtype == PROTO_REQ_MULTIBULK) {
+            //如果是普通模式请求（resp协议）
             if (processMultibulkBuffer(c) != C_OK) break;
         } else {
             serverPanic("Unknown request type");
@@ -1449,6 +1455,7 @@ void processInputBuffer(client *c) {
             resetClient(c);
         } else {
             /* Only reset the client when the command was executed. */
+            //命令执行
             if (processCommand(c) == C_OK) {
                 if (c->flags & CLIENT_MASTER && !(c->flags & CLIENT_MULTI)) {
                     /* Update the applied replication offset of our master. */
